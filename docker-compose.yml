@@ -1,0 +1,49 @@
+services:
+  mssql:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: coindesk_mssql
+    ports:
+      - "1433:1433"
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD="${SA_PASSWORD}"
+      - MSSQL_PID=Developer
+    volumes:
+      - mssql_data:/var/opt/mssql
+    # healthcheck:
+    #   test: /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P "${SA_PASSWORD}" -Q "SELECT 1" || exit 1
+    #   interval: 15s
+    #   timeout: 3s
+    #   retries: 10
+    #   start_period: 20s
+    # command: >
+    #   bash -c '
+    #     echo "Starting SQL Server..."
+    #     /opt/mssql/bin/sqlservr &
+    #     echo "Waiting for SQL Server to start..."
+    #     sleep 30s &&
+    #     echo "Creating database ${DB_NAME}..."
+    #     /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P "${SA_PASSWORD}" -Q "IF NOT EXISTS (SELECT * FROM sys.databases WHERE name = N''${DB_NAME}'') BEGIN CREATE DATABASE [${DB_NAME}] END;" &&
+    #     while sleep 1000; do :; done
+    #   '
+  # api:
+  #   container_name: api
+  #   build:
+  #     context: .
+  #     dockerfile: api/Dockerfile
+  #     target: build
+  #   ports:
+  #     - "5000:5000"
+  #     - "5005:5005"
+  #   environment:
+  #     - ASPNETCORE_ENVIRONMENT=Development
+  #     - ASPNETCORE_URLS=http://+:5000
+  #     - ConnectionStrings__DefaultConnection=Server=mssql;Database=${DB_NAME};User Id=sa;Password=${SA_PASSWORD};TrustServerCertificate=True;MultipleActiveResultSets=true
+  #     - VSTEST_HOST_DEBUG=1
+  #   volumes:
+  #     - ./api:/src/api
+  #     - ${HOME}/.microsoft/usersecrets:/root/.microsoft/usersecrets:ro
+  #     - ${HOME}/.nuget/packages:/root/.nuget/packages:ro
+  #   entrypoint: dotnet watch run --project api/api.csproj --no-launch-profile
+volumes:
+  mssql_data:
