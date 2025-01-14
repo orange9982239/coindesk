@@ -1,4 +1,4 @@
-# 初始化專案api
+# 初始化api專案
 ```sh
 # 建立api 專案
 dotnet new webapi --framework net8.0 -n api
