@@ -18,7 +18,8 @@ public class CurrencyService : ICurrencyService
 
     public async Task<IEnumerable<Currency>> GetAllCurrenciesAsync()
     {
-        return await _context.Currencies.ToListAsync();
+        // 依照幣別代碼排序
+        return await _context.Currencies.OrderBy(x=>x.CurrencyCode).ToListAsync();
     }
 
     public async Task<Currency> GetCurrencyByIdAsync(int id)
