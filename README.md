@@ -56,3 +56,23 @@ dotnet new gitignore
 git init
 git remote add .
 ```
+
+
+# uni test
+```sh
+# 建立測試專案
+mkdir tests
+cd tests
+dotnet new nunit --framework net8.0 -n api.UnitTests
+cd api.UnitTests
+dotnet add reference ../../api/api.csproj
+rm UnitTest1.cs
+
+# 添加必要的 NuGet 包：
+dotnet add package Moq
+dotnet add package Microsoft.EntityFrameworkCore.InMemory
+
+# 運行測試
+cd tests/api.UnitTests
+dotnet test
+```
