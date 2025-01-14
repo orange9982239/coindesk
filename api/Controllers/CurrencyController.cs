@@ -81,53 +81,59 @@ public class CurrencyController : ControllerBase
         return NoContent();
     }
 
-    // // 5. GET: api/currency/updateData
-    // [HttpGet("updateData")]
-    // public async Task<IActionResult> UpdateCurrencyData()
-    // {
-    //     var client = _httpClientFactory.CreateClient();
-    //     var response = await client.GetAsync("https://api.coindesk.com/v1/bpi/currentprice.json");
+    // 5. GET: api/currency/updateData
+    [HttpGet("updateData")]
+    public async Task<IActionResult> UpdateCurrencyData()
+    {
+        var client = _httpClientFactory.CreateClient();
+        var response = await client.GetAsync("https://api.coindesk.com/v1/bpi/currentprice.json");
 
-    //     if (!response.IsSuccessStatusCode)
-    //         return StatusCode((int)response.StatusCode, "Failed to fetch data from external API.");
+        if (!response.IsSuccessStatusCode)
+            return StatusCode((int)response.StatusCode, "Failed to fetch data from external API.");
 
-    //     var json = await response.Content.ReadAsStringAsync();
-    //     var coindeskData = JsonSerializer.Deserialize<CoindeskResponse>(json);
+        var json = await response.Content.ReadAsStringAsync();
 
-    //     if (coindeskData?.Bpi == null)
-    //         return BadRequest("Invalid data format from external API.");
+        // 使用 JsonDocument 解析動態 JSON
+        using var document = JsonDocument.Parse(json);
+        var root = document.RootElement;
 
-    //     foreach (var currency in coindeskData.Bpi)
-    //     {
-    //         var existingCurrency = await _context.Currencies
-    //             .FirstOrDefaultAsync(c => c.CurrencyCode == currency.Key);
+        // 檢查是否包含 "bpi" 節點
+        if (!root.TryGetProperty("bpi", out var bpiElement) || bpiElement.ValueKind != JsonValueKind.Object)
+            return BadRequest("Invalid data format from external API.");
 
-    //         if (existingCurrency != null)
-    //         {
-    //             existingCurrency.ExchangeRate = currency.Value.RateFloat;
-    //             existingCurrency.UpdatedAt = DateTime.UtcNow;
-    //         }
-    //     }
+        foreach (var currency in bpiElement.EnumerateObject())
+        {
+            var currencyCode = currency.Name;
+            var currencyData = currency.Value;
 
-    //     await _context.SaveChangesAsync();
-    //     return Ok("Currencies updated successfully.");
-    // }
+            if (currencyData.TryGetProperty("rate_float", out var rateFloatElement) && rateFloatElement.TryGetDecimal(out var rateFloat))
+            {
+                // 查詢現有的貨幣資料
+                var existingCurrency = await _context.Currencies
+                    .FirstOrDefaultAsync(c => c.CurrencyCode == currencyCode);
 
-    // // Coindesk API response model
-    // public class CoindeskResponse
-    // {
-    //     public BpiData Bpi { get; set; }
-    // }
+                if (existingCurrency != null)
+                {
+                    existingCurrency.ExchangeRate = rateFloat;
+                    existingCurrency.UpdatedAt = DateTime.UtcNow;
+                }
+                else
+                {
+                    // 新增不存在的記錄
+                    var newCurrency = new Currency
+                    {
+                        CurrencyCode = currencyCode,
+                        CurrencyName = $"請更新幣別對應中文名稱[{currencyCode}]",
+                        ExchangeRate = rateFloat,
+                        UpdatedAt = DateTime.UtcNow
+                    };
+                    await _context.Currencies.AddAsync(newCurrency);
+                }
+            }
+        }
 
-    // public class BpiData
-    // {
-    //     public Dictionary<string, CurrencyRate> Bpi { get; set; }
-    // }
+        await _context.SaveChangesAsync();
+        return Ok("Currencies updated successfully.");
+    }
 
-    // public class CurrencyRate
-    // {
-    //     public string Code { get; set; }
-    //     public string Description { get; set; }
-    //     public decimal RateFloat { get; set; }
-    // }
 }

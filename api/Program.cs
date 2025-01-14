@@ -4,6 +4,8 @@ var builder = WebApplication.CreateBuilder(args);
 
 // 啟用 Controller 支援
 builder.Services.AddControllers();
+// 註冊 HttpClientFactory
+builder.Services.AddHttpClient();
 
 // Add services to the container.
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
