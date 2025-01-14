@@ -6,6 +6,8 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 // 註冊 HttpClientFactory
 builder.Services.AddHttpClient();
+// 註冊 CurrencyService
+builder.Services.AddScoped<ICurrencyService, CurrencyService>();
 
 // Add services to the container.
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
